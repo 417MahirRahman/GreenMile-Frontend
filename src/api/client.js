@@ -2,7 +2,9 @@ import { auth } from "../firebase/firebase";
 export class ApiError extends Error {
   constructor(message, status) { super(message); this.name = "ApiError"; this.status = status; }
 }
-const baseUrl = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api").replace(/\/$/, "");
+const configuredBaseUrl = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api").replace(/\/+$/, "");
+// Backend origins need the API prefix; existing URLs with a path remain valid.
+const baseUrl = /^https?:\/\/[^/]+$/i.test(configuredBaseUrl) ? `${configuredBaseUrl}/api` : configuredBaseUrl;
 export async function request(path, { method = "GET", body, signal, user = auth.currentUser } = {}) {
   signal?.throwIfAborted();
   if (!user) throw new ApiError("Please sign in to continue.", 401);

@@ -36,7 +36,7 @@ export async function importLibrary(name) { await new Promise((resolve) => setTi
 const server = await createServer({
   configLoader: "runner",
   server: { host: "127.0.0.1", port: 4178, strictPort: true },
-  define: { "import.meta.env.VITE_API_BASE_URL": JSON.stringify("/mock-api"), "import.meta.env.VITE_GOOGLE_MAPS_API_KEY": JSON.stringify("mock-map-key") },
+  define: { "import.meta.env.VITE_API_BASE_URL": JSON.stringify(process.env.GREENMILE_SMOKE_API_BASE_URL || "http://127.0.0.1:4178"), "import.meta.env.VITE_GOOGLE_MAPS_API_KEY": JSON.stringify("mock-map-key") },
   plugins: [{ name: "greenmile-safe-test-integrations", enforce: "pre",
     resolveId(source) { if (source === "firebase/auth") return "\0greenmile-auth"; if (source === "@googlemaps/js-api-loader") return "\0greenmile-maps"; },
     load(id) { if (id === "\0greenmile-auth") return authMock; if (id.replaceAll("\\", "/").endsWith("/src/firebase/firebase.js")) return `export { auth, googleProvider } from 'firebase/auth';`; if (id === "\0greenmile-maps") return mapsMock; },
@@ -81,7 +81,7 @@ await page.route("**/*", async (interception) => {
   const url = new URL(request.url());
   if (url.hostname === "nominatim.openstreetmap.org") return interception.fulfill({ json: [{ lat: "23.8", lon: "90.4" }] });
   if (url.hostname !== "127.0.0.1") return interception.abort();
-  if (!url.pathname.startsWith("/mock-api")) return interception.continue();
+  if (!url.pathname.startsWith("/api/")) return interception.continue();
   const token = request.headers().authorization;
   assert.match(token || "", /^Bearer mock-token-/);
   const uid = token.replace("Bearer mock-token-", "");
